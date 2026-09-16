@@ -20,7 +20,7 @@ st.set_page_config(
     page_title="TongueTie — AI Language Studio",
     page_icon="🌍",
     layout="wide",
-    initial_sidebar_state="expanded",
+    initial_sidebar_state="collapsed",
 )
 
 # ==================================================================================
@@ -144,6 +144,30 @@ div[data-testid="stAudioInput"]{
 
 /* Segmented pill tab bar built from st.button columns */
 .tabbar-wrap{margin-bottom:4px}
+
+/* ---------- Clean mobile-first front interface ---------- */
+section[data-testid="stSidebar"]{display:none}
+.block-container{max-width:1180px;padding:.7rem 1rem 2.5rem}
+.tt-top{position:sticky;top:.4rem;z-index:50;padding:10px 14px;border-radius:18px;margin-bottom:10px}
+.brand{font-size:20px}
+.tabbar-wrap{overflow-x:auto;overflow-y:hidden;padding:2px 0 8px;scrollbar-width:none}
+.tabbar-wrap::-webkit-scrollbar{display:none}
+.nav-row{display:flex;gap:8px;min-width:max-content}
+.nav-row > div{min-width:0}
+.nav-row button{white-space:nowrap!important;min-height:40px!important;padding:0 13px!important;border-radius:999px!important;font-size:12px!important}
+.front-card{padding:18px;border-radius:22px;border:1px solid var(--line);background:linear-gradient(145deg,rgba(20,29,54,.95),rgba(10,16,31,.95));box-shadow:0 12px 35px rgba(0,0,0,.16)}
+@media (max-width:700px){
+  .block-container{padding:.45rem .65rem 2rem}
+  .tt-top{position:relative;padding:10px 12px}
+  .tt-top .badge.live{display:none}
+  .hero{padding:24px 18px;border-radius:24px}
+  .hero h1{font-size:38px;letter-spacing:-1.7px}
+  .hero p{font-size:14px}
+  .section-title{font-size:18px;margin-top:16px}
+  .card{padding:15px;border-radius:18px}
+  div[data-testid="stButton"] button{min-height:44px}
+  div[data-testid="stAudioInput"]{padding:8px}
+}
 </style>
 """,
     unsafe_allow_html=True,
@@ -268,6 +292,7 @@ st.markdown('<div class="tabbar-wrap"></div>', unsafe_allow_html=True)
 row1 = PAGES[:6]
 row2 = PAGES[6:]
 for row in (row1, row2):
+    st.markdown('<div class="nav-row">', unsafe_allow_html=True)
     cols = st.columns(len(row))
     for col, (name, icon) in zip(cols, row):
         with col:
@@ -275,6 +300,7 @@ for row in (row1, row2):
                          type="primary" if st.session_state.page == name else "secondary"):
                 st.session_state.page = name
                 st.rerun()
+    st.markdown('</div>', unsafe_allow_html=True)
 
 page = st.session_state.page
 
@@ -321,7 +347,7 @@ elif page == "Learn":
 
 elif page == "Voice Translator":
     st.title("🎙️ Voice Translator")
-    st.caption("Speak → live transcript → translation → correction → playback")
+    st.caption("Speak clearly. Get fast text, translation and correction.")
 
     a, b = st.columns(2)
     with a:
@@ -343,13 +369,13 @@ elif page == "Voice Translator":
     )
 
     if show_live:
-        render_live_recognition(code_of(source), height=300)
+        render_live_recognition(code_of(source), height=270)
         st.caption("This live preview runs in your browser for an instant look at what's being heard. Use **Copy text** and paste it below, or record with the button beneath for AI transcription + translation.")
 
-    audio = st.audio_input("🎤 Tap to record for AI transcription")
-    typed = st.text_area("Or type a sentence", placeholder="Say or type something to translate...")
+    audio = st.audio_input("🎤 Record your voice")
+    typed = st.text_area("Text input", placeholder="Your recognized speech will appear here…", height=110)
 
-    if st.button("🚀 Analyze & Translate", type="primary", use_container_width=True):
+    if st.button("⚡ Get Fast Answer", type="primary", use_container_width=True):
         text = typed.strip()
         if not text and audio:
             with st.spinner("Listening to your recording..."):
