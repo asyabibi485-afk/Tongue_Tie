@@ -20,7 +20,7 @@ st.set_page_config(
     page_title="TongueTie — AI Language Studio",
     page_icon="🌍",
     layout="wide",
-    initial_sidebar_state="expanded",
+    initial_sidebar_state="collapsed",
 )
 
 # ==================================================================================
@@ -50,10 +50,15 @@ footer{visibility:hidden}
 #MainMenu{visibility:hidden}
 
 /* ---------- Sidebar = the "side tab" panel: languages, quick-picks, switches ---------- */
-section[data-testid="stSidebar"]{
-  background:linear-gradient(180deg,#0a1022 0%,#080c19 100%);
-  border-right:1px solid var(--line);
-}
+section[data-testid="stSidebar"]{display:none!important}
+.front-controls{padding:16px;border:1px solid var(--line);border-radius:22px;background:rgba(16,23,43,.78);backdrop-filter:blur(16px);margin-bottom:14px}
+.control-label{font-size:11px;font-weight:800;color:#8fa0c8;text-transform:uppercase;letter-spacing:.08em;margin-bottom:5px}
+.nav-caption{font-size:12px;color:#8fa0c8;margin:0 0 7px 2px}
+.voice-title{font-size:28px;font-weight:900;letter-spacing:-1px;margin-bottom:4px}
+.voice-sub{color:#9eacd0;font-size:13px;margin-bottom:14px}
+.fast-card{border:1px solid #3d6ea8;border-radius:24px;padding:18px;background:linear-gradient(135deg,rgba(31,91,137,.28),rgba(94,55,150,.22));box-shadow:0 16px 40px rgba(0,0,0,.22)}
+.fast-card h3{margin:0 0 5px;font-size:17px}.fast-card p{margin:0;color:#aebbd8;font-size:12px}
+
 .sidebar-brand{padding:6px 2px 14px;display:flex;align-items:center;gap:10px}
 .sidebar-brand .logo-ring{position:relative;width:38px;height:38px;flex:0 0 38px}
 .sidebar-brand .logo-ring .ring{position:absolute;inset:0;border-radius:50%;
@@ -90,38 +95,6 @@ div[data-testid="stButton"] button:hover{border-color:#7de2ff;transform:translat
 div[data-testid="stButton"] button[kind="primary"]{
   background:linear-gradient(90deg,#236d9b,#7141c7);color:#fff;border-color:#8fd7ff;
   box-shadow:0 10px 26px rgba(103,90,220,.35)}
-
-/* ---------- Modern floating "dock" style for the primary tab bar ----------
-   .tabbar-dock is an empty spacer div; the two st.columns rows that follow it
-   are its siblings in the DOM, so we style them with adjacent-sibling
-   selectors chained in order — no custom classes on Streamlit's own
-   containers are needed, which keeps this robust across Streamlit versions. */
-.tabbar-dock{
-  height:10px;margin:0 0 -6px;border-radius:22px 22px 0 0;
-  border:1px solid #2c3d68;border-bottom:none;
-  background:linear-gradient(135deg,rgba(13,19,38,.85),rgba(18,14,34,.85))}
-.tabbar-dock + div[data-testid="stHorizontalBlock"],
-.tabbar-dock + div[data-testid="stHorizontalBlock"] + div[data-testid="stHorizontalBlock"]{
-  border-left:1px solid #2c3d68;border-right:1px solid #2c3d68;
-  background:linear-gradient(135deg,rgba(13,19,38,.85),rgba(18,14,34,.85));
-  padding:6px 8px;backdrop-filter:blur(18px)}
-.tabbar-dock + div[data-testid="stHorizontalBlock"]{
-  border-top:1px solid #2c3d68;border-radius:0;
-  box-shadow:inset 0 1px 0 rgba(255,255,255,.04)}
-.tabbar-dock + div[data-testid="stHorizontalBlock"] + div[data-testid="stHorizontalBlock"]{
-  border-bottom:1px solid #2c3d68;border-radius:0 0 22px 22px;margin-bottom:14px;
-  box-shadow:0 18px 40px rgba(0,0,0,.28)}
-.tabbar-dock + div[data-testid="stHorizontalBlock"] div[data-testid="stButton"] button,
-.tabbar-dock + div[data-testid="stHorizontalBlock"] + div[data-testid="stHorizontalBlock"] div[data-testid="stButton"] button{
-  border:1px solid transparent;border-radius:14px;min-height:38px;font-size:13.5px;
-  background:transparent;color:#aab9e6;font-weight:700;box-shadow:none}
-.tabbar-dock + div[data-testid="stHorizontalBlock"] div[data-testid="stButton"] button:hover,
-.tabbar-dock + div[data-testid="stHorizontalBlock"] + div[data-testid="stHorizontalBlock"] div[data-testid="stButton"] button:hover{
-  background:rgba(85,199,255,.10);color:#fff;transform:none;border-color:rgba(125,226,255,.35)}
-.tabbar-dock + div[data-testid="stHorizontalBlock"] div[data-testid="stButton"] button[kind="primary"],
-.tabbar-dock + div[data-testid="stHorizontalBlock"] + div[data-testid="stHorizontalBlock"] div[data-testid="stButton"] button[kind="primary"]{
-  background:linear-gradient(90deg,var(--cyan),var(--violet));color:#0a0e1c;border-color:transparent;
-  box-shadow:0 8px 22px rgba(122,90,255,.4)}
 
 .stTextInput input,.stTextArea textarea,.stNumberInput input,
 .stSelectbox div[data-baseweb="select"]>div{
@@ -174,6 +147,8 @@ div[data-testid="stButton"] button[kind="primary"]{
 div[data-testid="stAudioInput"]{
   border:1px solid #33466f;border-radius:20px;background:rgba(13,20,40,.7);padding:10px;margin-top:6px}
 
+/* Segmented pill tab bar built from st.button columns */
+.tabbar-wrap{margin-bottom:4px}
 </style>
 """,
     unsafe_allow_html=True,
@@ -220,67 +195,29 @@ PAGES = [
     ("Quiz & Tests", "🧪"), ("Progress", "📊"), ("Profile", "👤"), ("Admin", "⚙️"),
 ]
 
-# ---------------- Sidebar: the "side tab" panel (languages, quick chips, switches) ----------------
-with st.sidebar:
-    st.markdown(
-        f'<div class="sidebar-brand"><div class="logo-ring"><div class="ring"></div>'
-        f'<div class="dot">{MIC_SVG}</div></div>'
-        f'<div><strong>Tongue<span style="color:#9b5cff">Tie</span></strong>'
-        f'<small>AI Language Studio<br>Learn • Speak • Understand</small></div></div>',
-        unsafe_allow_html=True,
+# ---------------- Front controls: no sidebar ----------------
+def _swap_languages():
+    opts = language_options()
+    st.session_state.source_lang, st.session_state.target_lang = (
+        st.session_state.get("target_lang", opts[1]),
+        st.session_state.get("source_lang", opts[0]),
     )
 
-    def _swap_languages():
-        opts = language_options()
-        st.session_state.source_lang, st.session_state.target_lang = (
-            st.session_state.get("target_lang", opts[1]),
-            st.session_state.get("source_lang", opts[0]),
-        )
+source = st.session_state.get("source_lang", language_options()[0])
+target = st.session_state.get("target_lang", language_options()[1])
 
-    st.markdown("**I speak**")
-    source = st.selectbox("I speak", language_options(), index=0, label_visibility="collapsed", key="source_lang")
-    swap_col1, swap_col2 = st.columns([1, 1])
-    with swap_col1:
-        st.markdown("**I'm learning**")
-    with swap_col2:
-        st.button("⇄ Swap", use_container_width=True, key="swap_btn", on_click=_swap_languages)
-    target = st.selectbox("I'm learning", language_options(), index=1, label_visibility="collapsed", key="target_lang")
-
-    st.markdown(f'<span class="badge">{len(LANGUAGES)} languages available</span>', unsafe_allow_html=True)
-
-    st.markdown("###### ✥ Quick languages")
-    st.caption("Drag to reorder — saved on this device.")
-    quick_chips_html = "".join(f'<div class="chip" draggable="true">{n}</div>' for n in POPULAR)
-    quick_chips_markup = f"""
-    <div id="chipbox" class="chip-row">{quick_chips_html}</div>
-    <script>
-    const box = document.getElementById('chipbox');
-    let dragEl = null;
-    [...box.children].forEach(chip => {{
-      chip.addEventListener('dragstart', () => {{ dragEl = chip; chip.classList.add('dragging'); }});
-      chip.addEventListener('dragend', () => {{ chip.classList.remove('dragging'); }});
-    }});
-    box.addEventListener('dragover', e => {{
-      e.preventDefault();
-      const after = [...box.children].find(c => {{
-        const r = c.getBoundingClientRect();
-        return e.clientY <= r.top + r.height/2;
-      }});
-      if (dragEl && after && after !== dragEl) box.insertBefore(dragEl, after);
-      else if (dragEl && !after) box.appendChild(dragEl);
-    }});
-    </script>
-    """
-    from streamlit.components.v1 import html as _sb_html
-    _sb_html(quick_chips_markup, height=76, scrolling=False)
-
-    with st.expander("⚙️ Settings", expanded=False):
-        st.session_state.autoplay = st.toggle("Auto-play translation audio", value=st.session_state.autoplay)
-        st.session_state.prefer_female = st.toggle("Prefer female voice", value=st.session_state.prefer_female)
-        st.session_state.live_preview = st.toggle("Live browser recognition preview", value=st.session_state.live_preview)
-
-    st.divider()
-    st.caption("Secrets required: `GEMINI_API_KEY` in `.streamlit/secrets.toml` (see README).")
+st.markdown('<div class="front-controls">', unsafe_allow_html=True)
+left, swap, right = st.columns([5,1,5])
+with left:
+    st.markdown('<div class="control-label">I speak</div>', unsafe_allow_html=True)
+    source = st.selectbox("Source", language_options(), index=language_options().index(source) if source in language_options() else 0, label_visibility="collapsed", key="source_lang")
+with swap:
+    st.markdown('<div style="height:23px"></div>', unsafe_allow_html=True)
+    st.button("⇄", use_container_width=True, key="swap_btn", on_click=_swap_languages)
+with right:
+    st.markdown('<div class="control-label">I am learning</div>', unsafe_allow_html=True)
+    target = st.selectbox("Target", language_options(), index=language_options().index(target) if target in language_options() else 1, label_visibility="collapsed", key="target_lang")
+st.markdown(f'<div style="margin-top:8px"><span class="badge">🌍 {len(LANGUAGES)} languages</span> <span class="badge live">● AI ready</span></div></div>', unsafe_allow_html=True)
 
 # ---------------- Top brand bar ----------------
 st.markdown(
@@ -293,19 +230,22 @@ st.markdown(
     unsafe_allow_html=True,
 )
 
-# ---------------- Primary navigation: an always-visible pill tab-bar (the "side tab", front and center) ----------------
-st.markdown('<div class="tabbar-dock"></div>', unsafe_allow_html=True)
-row1 = PAGES[:6]
-row2 = PAGES[6:]
-for row in (row1, row2):
-    cols = st.columns(len(row))
-    for col, (name, icon) in zip(cols, row):
-        with col:
-            if st.button(f"{icon} {name}", key=f"nav_{name}", use_container_width=True,
-                         type="primary" if st.session_state.page == name else "secondary"):
-                st.session_state.page = name
-                st.rerun()
-
+# ---------------- Primary navigation: clean front tabs ----------------
+primary = [("Home","🏠"),("Learn","📚"),("Voice Translator","🎙️"),("AI Tutor","🤖"),("Correct My English","✍️")]
+cols = st.columns(5)
+for col, (name, icon) in zip(cols, primary):
+    with col:
+        if st.button(f"{icon} {name if name != 'Correct My English' else 'Practice'}", key=f"nav_{name}", use_container_width=True, type="primary" if st.session_state.page == name else "secondary"):
+            st.session_state.page = name
+            st.rerun()
+more = [x for x in PAGES if x[0] not in {n for n,_ in primary}]
+more_names = [f"{i} {n}" for n,i in more]
+selected_more = st.selectbox("More tools", ["More…"] + more_names, label_visibility="collapsed", key="more_nav")
+if selected_more != "More…":
+    chosen = selected_more.split(" ",1)[1]
+    if st.session_state.page != chosen:
+        st.session_state.page = chosen
+        st.rerun()
 page = st.session_state.page
 
 # ---------------- Pages ----------------
@@ -350,62 +290,41 @@ elif page == "Learn":
         feature("Learning path", "🧭", "Daily conversation → Vocabulary → Grammar → Pronunciation → Listening → Speaking → Review")
 
 elif page == "Voice Translator":
-    st.title("🎙️ Voice Translator")
-    st.caption("Speak → live transcript → translation → correction → playback")
+    st.markdown('<div class="voice-title">🎙️ Voice Translator</div><div class="voice-sub">Speak clearly. See words instantly. Get a fast text answer.</div>', unsafe_allow_html=True)
+    a,b = st.columns(2)
+    with a: st.markdown(f'<div class="card"><b>🎤 From</b><div style="font-size:18px;margin-top:5px">{name_of(source)}</div></div>', unsafe_allow_html=True)
+    with b: st.markdown(f'<div class="card"><b>🌐 To</b><div style="font-size:18px;margin-top:5px">{name_of(target)}</div></div>', unsafe_allow_html=True)
 
-    a, b = st.columns(2)
-    with a:
-        st.markdown(f'<div class="card"><h3>🎤 Speak in</h3><p>{name_of(source)}</p></div>', unsafe_allow_html=True)
-    with b:
-        st.markdown(f'<div class="card"><h3>🌐 Translate to</h3><p>{name_of(target)}</p></div>', unsafe_allow_html=True)
+    sw1,sw2,sw3 = st.columns(3)
+    with sw1: voice_female = st.toggle("🔊 Female voice", value=st.session_state.prefer_female, key="vt_female")
+    with sw2: show_live = st.toggle("⚡ Live recognition", value=st.session_state.live_preview, key="vt_live")
+    with sw3: fast_mode = st.toggle("🚀 Fast answer", value=True, key="vt_fast")
 
-    sw1, sw2 = st.columns(2)
-    with sw1:
-        voice_female = st.toggle("🔊 Female voice", value=st.session_state.prefer_female, key="vt_female")
-    with sw2:
-        show_live = st.toggle("⚡ Live browser preview", value=st.session_state.live_preview, key="vt_live")
-
-    st.markdown(
-        f'<div class="mic-stage"><div class="mic-orb"><div class="r1"></div><div class="r2"></div>'
-        f'<div class="core">{MIC_SVG}</div></div>'
-        f'<div class="mic-caption">Real microphone input — tap below to record</div></div>',
-        unsafe_allow_html=True,
-    )
-
+    st.markdown('<div class="fast-card"><h3>🎯 Speak naturally</h3><p>Use live recognition for instant text, or record a clip for higher-quality AI transcription.</p></div>', unsafe_allow_html=True)
     if show_live:
-        render_live_recognition(code_of(source), height=300)
-        st.caption("This live preview runs in your browser for an instant look at what's being heard. Use **Copy text** and paste it below, or record with the button beneath for AI transcription + translation.")
-
-    audio = st.audio_input("🎤 Tap to record for AI transcription")
-    typed = st.text_area("Or type a sentence", placeholder="Say or type something to translate...")
-
-    if st.button("🚀 Analyze & Translate", type="primary", use_container_width=True):
+        render_live_recognition(code_of(source), height=250)
+    audio = st.audio_input("🎤 Record voice for AI analysis")
+    typed = st.text_area("Text", placeholder="Or type your sentence here…", height=100, label_visibility="collapsed")
+    if st.button("⚡ Get Fast Answer", type="primary", use_container_width=True):
         text = typed.strip()
         if not text and audio:
-            with st.spinner("Listening to your recording..."):
-                try:
-                    text = transcribe_audio(audio.getvalue(), code_of(source), mime_type=audio.type or "audio/wav")
-                except Exception as exc:
-                    st.error(f"AI service error: {exc}")
-                    text = ""
+            with st.spinner("Transcribing…"):
+                try: text = transcribe_audio(audio.getvalue(), code_of(source))
+                except Exception as exc: st.error(f"AI service error: {exc}")
         if not text:
-            st.warning("No speech detected. Please record again or type your sentence.")
+            st.warning("Speak or type something first.")
         else:
-            with st.spinner("AI is translating and checking your speech..."):
-                translation = translate_text(text, source, target)
-                correction = correct_text(text, source)
-            st.markdown('<div class="section-title">Analysis</div>', unsafe_allow_html=True)
-            st.markdown(f'<div class="tt-result"><b>📝 Transcript</b><br>{text}</div>', unsafe_allow_html=True)
-            st.markdown(f'<div class="tt-result"><b>🌐 Translation</b><br>{translation}</div>', unsafe_allow_html=True)
-            st.markdown(f'<div class="tt-result success"><b>✍️ Correction</b><br>{correction}</div>', unsafe_allow_html=True)
-            if not str(translation).startswith("AI service error:"):
-                st.session_state.history.insert(0, {"source": text, "from": name_of(source), "to": name_of(target), "result": translation})
-                st.session_state.last_translation = translation
-
+            with st.spinner("Generating answer…"):
+                # One focused request keeps the response faster than separate translation + correction calls.
+                result = translate_text(text, source, target)
+            st.markdown('<div class="section-title">Your answer</div>', unsafe_allow_html=True)
+            st.markdown(f'<div class="tt-result"><b>📝 You said</b><br>{text}</div>', unsafe_allow_html=True)
+            st.markdown(f'<div class="tt-result success"><b>⚡ Answer</b><br>{result}</div>', unsafe_allow_html=True)
+            if not str(result).startswith("AI service error:"):
+                st.session_state.history.insert(0, {"source": text, "from": name_of(source), "to": name_of(target), "result": result})
+                st.session_state.last_translation = result
     if st.session_state.get("last_translation"):
-        st.markdown('<div class="section-title">🔊 Listen</div>', unsafe_allow_html=True)
-        gender = "Female" if voice_female else "Male"
-        render_browser_tts(st.session_state.last_translation, code_of(target), gender)
+        render_browser_tts(st.session_state.last_translation, code_of(target), "Female" if voice_female else "Male")
 
 elif page == "AI Tutor":
     st.title("🤖 AI Tutor")
