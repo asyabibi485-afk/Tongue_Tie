@@ -20,7 +20,7 @@ st.set_page_config(
     page_title="TongueTie — AI Language Studio",
     page_icon="🌍",
     layout="wide",
-    initial_sidebar_state="collapsed",
+    initial_sidebar_state="expanded",
 )
 
 # ==================================================================================
@@ -91,6 +91,38 @@ div[data-testid="stButton"] button[kind="primary"]{
   background:linear-gradient(90deg,#236d9b,#7141c7);color:#fff;border-color:#8fd7ff;
   box-shadow:0 10px 26px rgba(103,90,220,.35)}
 
+/* ---------- Modern floating "dock" style for the primary tab bar ----------
+   .tabbar-dock is an empty spacer div; the two st.columns rows that follow it
+   are its siblings in the DOM, so we style them with adjacent-sibling
+   selectors chained in order — no custom classes on Streamlit's own
+   containers are needed, which keeps this robust across Streamlit versions. */
+.tabbar-dock{
+  height:10px;margin:0 0 -6px;border-radius:22px 22px 0 0;
+  border:1px solid #2c3d68;border-bottom:none;
+  background:linear-gradient(135deg,rgba(13,19,38,.85),rgba(18,14,34,.85))}
+.tabbar-dock + div[data-testid="stHorizontalBlock"],
+.tabbar-dock + div[data-testid="stHorizontalBlock"] + div[data-testid="stHorizontalBlock"]{
+  border-left:1px solid #2c3d68;border-right:1px solid #2c3d68;
+  background:linear-gradient(135deg,rgba(13,19,38,.85),rgba(18,14,34,.85));
+  padding:6px 8px;backdrop-filter:blur(18px)}
+.tabbar-dock + div[data-testid="stHorizontalBlock"]{
+  border-top:1px solid #2c3d68;border-radius:0;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.04)}
+.tabbar-dock + div[data-testid="stHorizontalBlock"] + div[data-testid="stHorizontalBlock"]{
+  border-bottom:1px solid #2c3d68;border-radius:0 0 22px 22px;margin-bottom:14px;
+  box-shadow:0 18px 40px rgba(0,0,0,.28)}
+.tabbar-dock + div[data-testid="stHorizontalBlock"] div[data-testid="stButton"] button,
+.tabbar-dock + div[data-testid="stHorizontalBlock"] + div[data-testid="stHorizontalBlock"] div[data-testid="stButton"] button{
+  border:1px solid transparent;border-radius:14px;min-height:38px;font-size:13.5px;
+  background:transparent;color:#aab9e6;font-weight:700;box-shadow:none}
+.tabbar-dock + div[data-testid="stHorizontalBlock"] div[data-testid="stButton"] button:hover,
+.tabbar-dock + div[data-testid="stHorizontalBlock"] + div[data-testid="stHorizontalBlock"] div[data-testid="stButton"] button:hover{
+  background:rgba(85,199,255,.10);color:#fff;transform:none;border-color:rgba(125,226,255,.35)}
+.tabbar-dock + div[data-testid="stHorizontalBlock"] div[data-testid="stButton"] button[kind="primary"],
+.tabbar-dock + div[data-testid="stHorizontalBlock"] + div[data-testid="stHorizontalBlock"] div[data-testid="stButton"] button[kind="primary"]{
+  background:linear-gradient(90deg,var(--cyan),var(--violet));color:#0a0e1c;border-color:transparent;
+  box-shadow:0 8px 22px rgba(122,90,255,.4)}
+
 .stTextInput input,.stTextArea textarea,.stNumberInput input,
 .stSelectbox div[data-baseweb="select"]>div{
   background:#151b2d!important;border:1px solid #303f67!important;color:#fff!important;border-radius:14px!important}
@@ -142,32 +174,6 @@ div[data-testid="stButton"] button[kind="primary"]{
 div[data-testid="stAudioInput"]{
   border:1px solid #33466f;border-radius:20px;background:rgba(13,20,40,.7);padding:10px;margin-top:6px}
 
-/* Segmented pill tab bar built from st.button columns */
-.tabbar-wrap{margin-bottom:4px}
-
-/* ---------- Clean mobile-first front interface ---------- */
-section[data-testid="stSidebar"]{display:none}
-.block-container{max-width:1180px;padding:.7rem 1rem 2.5rem}
-.tt-top{position:sticky;top:.4rem;z-index:50;padding:10px 14px;border-radius:18px;margin-bottom:10px}
-.brand{font-size:20px}
-.tabbar-wrap{overflow-x:auto;overflow-y:hidden;padding:2px 0 8px;scrollbar-width:none}
-.tabbar-wrap::-webkit-scrollbar{display:none}
-.nav-row{display:flex;gap:8px;min-width:max-content}
-.nav-row > div{min-width:0}
-.nav-row button{white-space:nowrap!important;min-height:40px!important;padding:0 13px!important;border-radius:999px!important;font-size:12px!important}
-.front-card{padding:18px;border-radius:22px;border:1px solid var(--line);background:linear-gradient(145deg,rgba(20,29,54,.95),rgba(10,16,31,.95));box-shadow:0 12px 35px rgba(0,0,0,.16)}
-@media (max-width:700px){
-  .block-container{padding:.45rem .65rem 2rem}
-  .tt-top{position:relative;padding:10px 12px}
-  .tt-top .badge.live{display:none}
-  .hero{padding:24px 18px;border-radius:24px}
-  .hero h1{font-size:38px;letter-spacing:-1.7px}
-  .hero p{font-size:14px}
-  .section-title{font-size:18px;margin-top:16px}
-  .card{padding:15px;border-radius:18px}
-  div[data-testid="stButton"] button{min-height:44px}
-  div[data-testid="stAudioInput"]{padding:8px}
-}
 </style>
 """,
     unsafe_allow_html=True,
@@ -288,11 +294,10 @@ st.markdown(
 )
 
 # ---------------- Primary navigation: an always-visible pill tab-bar (the "side tab", front and center) ----------------
-st.markdown('<div class="tabbar-wrap"></div>', unsafe_allow_html=True)
+st.markdown('<div class="tabbar-dock"></div>', unsafe_allow_html=True)
 row1 = PAGES[:6]
 row2 = PAGES[6:]
 for row in (row1, row2):
-    st.markdown('<div class="nav-row">', unsafe_allow_html=True)
     cols = st.columns(len(row))
     for col, (name, icon) in zip(cols, row):
         with col:
@@ -300,7 +305,6 @@ for row in (row1, row2):
                          type="primary" if st.session_state.page == name else "secondary"):
                 st.session_state.page = name
                 st.rerun()
-    st.markdown('</div>', unsafe_allow_html=True)
 
 page = st.session_state.page
 
@@ -347,7 +351,7 @@ elif page == "Learn":
 
 elif page == "Voice Translator":
     st.title("🎙️ Voice Translator")
-    st.caption("Speak clearly. Get fast text, translation and correction.")
+    st.caption("Speak → live transcript → translation → correction → playback")
 
     a, b = st.columns(2)
     with a:
@@ -369,18 +373,18 @@ elif page == "Voice Translator":
     )
 
     if show_live:
-        render_live_recognition(code_of(source), height=270)
+        render_live_recognition(code_of(source), height=300)
         st.caption("This live preview runs in your browser for an instant look at what's being heard. Use **Copy text** and paste it below, or record with the button beneath for AI transcription + translation.")
 
-    audio = st.audio_input("🎤 Record your voice")
-    typed = st.text_area("Text input", placeholder="Your recognized speech will appear here…", height=110)
+    audio = st.audio_input("🎤 Tap to record for AI transcription")
+    typed = st.text_area("Or type a sentence", placeholder="Say or type something to translate...")
 
-    if st.button("⚡ Get Fast Answer", type="primary", use_container_width=True):
+    if st.button("🚀 Analyze & Translate", type="primary", use_container_width=True):
         text = typed.strip()
         if not text and audio:
             with st.spinner("Listening to your recording..."):
                 try:
-                    text = transcribe_audio(audio.getvalue(), code_of(source))
+                    text = transcribe_audio(audio.getvalue(), code_of(source), mime_type=audio.type or "audio/wav")
                 except Exception as exc:
                     st.error(f"AI service error: {exc}")
                     text = ""
