@@ -3,11 +3,12 @@ from __future__ import annotations
 import os
 import streamlit as st
 
-from language_data import LANGUAGES, language_options, POPULAR
+from language_data import LANGUAGES, language_options, POPULAR, PROFICIENCY_LEVELS
 from rag import retrieve_context
 from gemini_service import (
     ai_tutor,
     translate_text,
+    translate_fast,
     correct_text,
     explain_word,
     generate_quiz,
@@ -222,6 +223,7 @@ defaults = {
     "history": [], "words": [], "lessons": 0, "quiz_score": 0,
     "page": "Home",
     "autoplay": False, "prefer_female": True,
+    "proficiency": PROFICIENCY_LEVELS[1],
 }
 for key, default in defaults.items():
     if key not in st.session_state:
@@ -293,7 +295,7 @@ if page == "Home":
         '<div class="hero"><h1>Speak beyond<br><span class="gradient">language barriers.</span></h1>'
         '<p>Learn languages with an AI tutor, real speech recognition, instant translation, smart correction, '
         'vocabulary practice and guided lessons — all in one fast, creative workspace.</p>'
-        '<div class="pillrow"><span class="pill">130+ Languages</span><span class="pill">AI Tutor</span>'
+        '<div class="pillrow"><span class="pill">250+ Languages</span><span class="pill">AI Tutor</span>'
         '<span class="pill">AI Voice Recognition</span><span class="pill">Grammar Coach</span>'
         '<span class="pill">Personal Progress</span></div></div>',
         unsafe_allow_html=True,
@@ -314,19 +316,41 @@ if page == "Home":
 
 elif page == "Learn":
     st.title("📚 Learning Studio")
-    st.caption(f"Learning {name_of(target)} through {name_of(source)}")
-    left, right = st.columns([1, 1])
-    with left:
-        level = st.selectbox("Level", ["Beginner", "Elementary", "Intermediate", "Upper Intermediate", "Advanced"])
-        topic = st.text_input("Daily-life topic", "Introducing yourself")
-        if st.button("✨ Generate lesson", type="primary", use_container_width=True):
-            with st.spinner("Building your lesson..."):
-                result = lesson_plan(source, target, level, topic)
-            show_ai_result(result)
-            if not str(result).startswith("AI service error:"):
-                st.session_state.lessons += 1
-    with right:
-        feature("Learning path", "🧭", "Daily conversation → Vocabulary → Grammar → Pronunciation → Listening → Speaking → Review")
+    st.caption(f"Learning {name_of(target)} through {name_of(source)} · Level: {st.session_state.proficiency}")
+
+    tab_lesson, tab_vocab, tab_grammar = st.tabs(["📘 Lesson Generator", "📖 Quick Vocabulary", "🧠 Grammar Tip"])
+
+    with tab_lesson:
+        left, right = st.columns([1, 1])
+        with left:
+            level = st.selectbox(
+                "Level", PROFICIENCY_LEVELS,
+                index=PROFICIENCY_LEVELS.index(st.session_state.proficiency),
+            )
+            topic = st.text_input("Daily-life topic", "Introducing yourself")
+            if st.button("✨ Generate lesson", type="primary", use_container_width=True):
+                with st.spinner("Building your lesson..."):
+                    result = lesson_plan(source, target, level, topic)
+                show_ai_result(result)
+                if not str(result).startswith("AI service error:"):
+                    st.session_state.lessons += 1
+        with right:
+            feature("Learning path", "🧭", "Daily conversation → Vocabulary → Grammar → Pronunciation → Listening → Speaking → Review")
+
+    with tab_vocab:
+        word = st.text_input("Word or phrase to learn right now", key="learn_vocab_word")
+        if st.button("Explain word", key="learn_vocab_btn") and word.strip():
+            with st.spinner("Building your word card..."):
+                show_ai_result(explain_word(word, source, target))
+
+    with tab_grammar:
+        topic2 = st.text_input("Grammar topic", "Present simple tense", key="learn_grammar_topic")
+        if st.button("Quick grammar tip", key="learn_grammar_btn"):
+            with st.spinner("Preparing a quick tip..."):
+                show_ai_result(ai_tutor(
+                    f"Give one short, high-value tip about {topic2}, with one example.",
+                    source, target, level=st.session_state.proficiency,
+                ))
 
 elif page == "Voice Translator":
     st.markdown('<div class="voice-title">🎙️ Voice Translator</div><div class="voice-sub">Speak clearly. See words instantly. Get a fast, accurate answer.</div>', unsafe_allow_html=True)
@@ -367,8 +391,12 @@ elif page == "Voice Translator":
             st.warning("Speak or type something first.")
         else:
             with st.spinner("Generating answer…"):
-                translation = translate_text(text, source, target)
-                correction = None if fast_mode else correct_text(text, source)
+                if fast_mode:
+                    translation = translate_fast(text, source, target)
+                    correction = None
+                else:
+                    translation = translate_text(text, source, target)
+                    correction = correct_text(text, source)
             st.markdown('<div class="section-title">Your answer</div>', unsafe_allow_html=True)
             st.markdown(f'<div class="tt-result"><b>📝 You said</b><br>{text}</div>', unsafe_allow_html=True)
             st.markdown(f'<div class="tt-result success"><b>⚡ Answer</b><br>{translation}</div>', unsafe_allow_html=True)
@@ -383,11 +411,11 @@ elif page == "Voice Translator":
 
 elif page == "AI Tutor":
     st.title("🤖 AI Tutor")
-    st.caption("Ask naturally. Get examples. Practice immediately.")
+    st.caption(f"Ask naturally. Get examples. Practice immediately. · Level: {st.session_state.proficiency}")
     question = st.text_area("Your question", placeholder="Explain when to use the present simple in easy English...")
     if st.button("Ask Tutor", type="primary") and question.strip():
         with st.spinner("Your tutor is thinking..."):
-            show_ai_result(ai_tutor(question, source, target, retrieve_context(question)))
+            show_ai_result(ai_tutor(question, source, target, retrieve_context(question), level=st.session_state.proficiency))
 
 elif page == "Correct My English":
     st.title("✍️ Smart Correction")
@@ -412,17 +440,22 @@ elif page == "Vocabulary":
 
 elif page == "Grammar":
     st.title("🧠 Grammar Coach")
+    st.caption(f"Level: {st.session_state.proficiency}")
     topic = st.text_input("Grammar topic", "Present simple tense")
     if st.button("Explain grammar", type="primary"):
         with st.spinner("Preparing a simple explanation..."):
-            show_ai_result(ai_tutor(f"Teach {topic} with simple rules, examples, common mistakes and a mini exercise.", source, target, retrieve_context(topic)))
+            show_ai_result(ai_tutor(
+                f"Teach {topic} with simple rules, examples, common mistakes and a mini exercise.",
+                source, target, retrieve_context(topic), level=st.session_state.proficiency,
+            ))
 
 elif page == "Quiz & Tests":
     st.title("🧪 Quiz Lab")
+    st.caption(f"Level: {st.session_state.proficiency}")
     topic = st.text_input("Quiz topic", "Daily conversation")
     if st.button("Generate quiz", type="primary"):
         with st.spinner("Creating your quiz..."):
-            st.session_state.quiz = generate_quiz(source, target, topic)
+            st.session_state.quiz = generate_quiz(source, target, topic, level=st.session_state.proficiency)
     if "quiz" in st.session_state:
         show_ai_result(st.session_state.quiz)
         score = st.number_input("Your score (%)", 0, 100, st.session_state.quiz_score)
@@ -445,6 +478,14 @@ elif page == "Profile":
     st.title("👤 Profile & Preferences")
     name = st.text_input("Name", "TongueTie Learner")
     st.markdown(f'<div class="card"><h3>{name}</h3><p>Native: {name_of(source)}<br>Learning: {name_of(target)}</p></div>', unsafe_allow_html=True)
+
+    st.markdown('<div class="section-title">🎯 Proficiency level</div>', unsafe_allow_html=True)
+    st.caption("Drag to set your current level — the AI Tutor, Grammar Coach, Lessons and Quizzes all pitch content to this.")
+    st.session_state.proficiency = st.select_slider(
+        "Proficiency (CEFR)", options=PROFICIENCY_LEVELS,
+        value=st.session_state.proficiency, label_visibility="collapsed",
+    )
+
     st.toggle("Daily reminders", True, key="pref_reminders")
     st.toggle("Show pronunciation tips", True, key="pref_pronunciation")
     st.session_state.prefer_female = st.toggle("Prefer female voice when available", value=st.session_state.prefer_female, key="pref_female_voice")

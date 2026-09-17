@@ -193,25 +193,35 @@ def generate(
     return f"AI service error: {last or 'Unknown Gemini error.'}"
 
 
-def ask(prompt: str, *, temperature: float = 0.4) -> str:
+def ask(prompt: str, *, temperature: float = 0.4, max_tokens: int = 1024) -> str:
     """Send one stateless text request to Gemini.
 
     No SDK client is created, cached, closed, or reused. This directly avoids
     the Streamlit error: "Cannot send a request, as the client has been closed."
+
+    `max_tokens` caps generation length — output length is the main lever on
+    response latency for flash models, so every helper below keeps a
+    reasonable cap instead of letting the model ramble, which keeps the app
+    feeling responsive.
     """
     if not prompt or not prompt.strip():
         return "AI service error: empty prompt."
-    return generate([{"text": prompt.strip()}], temperature=temperature)
+    return generate(
+        [{"text": prompt.strip()}],
+        temperature=temperature,
+        generation_config_extra={"maxOutputTokens": max_tokens},
+    )
 
 
-def ai_tutor(question, source, target, context=""):
+def ai_tutor(question, source, target, context="", level=""):
+    level_line = f"Learner proficiency (CEFR): {level}\n" if level else ""
     return ask(f"""You are TongueTie, a friendly multilingual language tutor.
 Learner language: {source}
 Target language: {target}
-Question: {question}
+{level_line}Question: {question}
 Relevant context:
 {context}
-Give a clear learner-friendly answer. Include examples and a short practice task when useful.
+Give a clear learner-friendly answer pitched at the learner's level. Include examples and a short practice task when useful.
 Do not claim to have heard audio unless a transcript is provided.""")
 
 
@@ -221,6 +231,26 @@ Return a natural translation first, then a concise learning note if useful.
 Preserve meaning, tone, names, and important formatting.
 Text:
 {text}""")
+
+
+def translate_fast(text, source, target):
+    """Minimal-latency translation for the "Fast answer" path.
+
+    No learning note, no extra commentary, and a low output-token cap —
+    output length is the biggest lever on response time for flash models,
+    so keeping this to just the translation itself is what makes it fast.
+    """
+    prompt = (
+        f"Translate the following text from {source} to {target}. "
+        "Output ONLY the translation itself - no notes, no explanation, "
+        "no quotation marks, nothing else.\n\n"
+        f"Text:\n{text.strip()}"
+    )
+    return generate(
+        [{"text": prompt}],
+        temperature=0.2,
+        generation_config_extra={"maxOutputTokens": 300},
+    )
 
 
 def correct_text(text, language):
@@ -239,10 +269,11 @@ def explain_word(word, source, target):
 Include meaning, part of speech, pronunciation guidance, 2 examples, common mistakes, related words, and one short practice question.""")
 
 
-def generate_quiz(source, target, topic):
+def generate_quiz(source, target, topic, level=""):
+    level_line = f"Learner proficiency (CEFR): {level}\n" if level else ""
     return ask(f"""Create a 10-question {target} language-learning quiz for a {source}-speaking learner.
-Topic: {topic}
-Use clear multiple-choice questions and include an answer key at the end.""")
+{level_line}Topic: {topic}
+Match question difficulty to the learner's level. Use clear multiple-choice questions and include an answer key at the end.""")
 
 
 def lesson_plan(source, target, level, topic):

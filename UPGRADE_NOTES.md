@@ -51,7 +51,7 @@ POST https://generativelanguage.googleapis.com/v1beta/models/{model}:generateCon
 
 ## Everything else
 
-Language coverage (130+ languages/locales across every populated
+Language coverage (250+ languages/locales across every populated
 continent), the RAG knowledge base, lesson/quiz/vocabulary/grammar
 generation, and the Streamlit Cloud deployment flow are unchanged.
 
@@ -72,3 +72,30 @@ generation, and the Streamlit Cloud deployment flow are unchanged.
 - The "Fast answer" toggle on the Voice Translator page is now wired up:
   on, it does one quick translation; off, it also runs a grammar
   correction pass.
+
+## Faster "Get Fast Answer"
+
+The fast path was still asking Gemini for a translation *plus* a learning
+note, and output length is the main lever on response time for flash
+models. Added `translate_fast()` in `gemini_service.py`: translation-only
+prompt, `maxOutputTokens` capped at 300, lower temperature. The "🚀 Fast
+answer" toggle now calls this instead of the full `translate_text()` +
+`correct_text()` pair, which are still used when that toggle is off.
+
+## Broader language coverage + proficiency-aware, faster AI everywhere
+
+- Expanded the language list from 143 to **252** entries — added many more
+  African, Pacific, Central Asian, Caucasus, Indigenous American and
+  Southeast Asian languages so most learners will find their target
+  language, not just the largest world languages.
+- Added a **proficiency slider** (real `st.select_slider`, CEFR A1–C2) on
+  the Profile page. It's now the single source of truth for level, and
+  feeds into the AI Tutor, Grammar Coach, Quiz generator and Lesson
+  generator, so content is pitched at the right difficulty instead of a
+  generic default.
+- The Learning Studio now uses real **`st.tabs`** (Lesson Generator / Quick
+  Vocabulary / Grammar Tip) instead of one long page.
+- App-wide response speed: every AI call now caps output length
+  (`maxOutputTokens`), not just the Voice Translator's fast path — output
+  length is the main latency lever for flash models, so this makes AI
+  Tutor, Grammar, Vocabulary, Quiz and Lessons noticeably snappier too.
