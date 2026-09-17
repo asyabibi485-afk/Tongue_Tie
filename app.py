@@ -13,7 +13,7 @@ from gemini_service import (
     generate_quiz,
     lesson_plan,
 )
-from speech_service import transcribe_audio, render_browser_tts, render_live_recognition
+from speech_service import transcribe_audio, render_browser_tts
 
 
 st.set_page_config(
@@ -56,8 +56,22 @@ section[data-testid="stSidebar"]{display:none!important}
 .nav-caption{font-size:12px;color:#8fa0c8;margin:0 0 7px 2px}
 .voice-title{font-size:28px;font-weight:900;letter-spacing:-1px;margin-bottom:4px}
 .voice-sub{color:#9eacd0;font-size:13px;margin-bottom:14px}
-.fast-card{border:1px solid #3d6ea8;border-radius:24px;padding:18px;background:linear-gradient(135deg,rgba(31,91,137,.28),rgba(94,55,150,.22));box-shadow:0 16px 40px rgba(0,0,0,.22)}
-.fast-card h3{margin:0 0 5px;font-size:17px}.fast-card p{margin:0;color:#aebbd8;font-size:12px}
+
+
+/* ---------- Voice Studio: single, unified "plugin" style voice-recognition panel ---------- */
+.voice-studio{position:relative;border:1px solid #3d6ea8;border-radius:26px 26px 0 0;border-bottom:none;padding:6px 18px 4px;margin:8px 0 0;
+  background:linear-gradient(160deg,rgba(20,45,70,.55),rgba(56,32,96,.42));box-shadow:0 18px 46px rgba(0,0,0,.28)}
+.voice-studio-head{display:flex;align-items:center;gap:8px;padding:12px 2px 0}
+.vs-dot{width:9px;height:9px;border-radius:50%;background:#51e6ad;box-shadow:0 0 10px #51e6ad;animation:pulse 2.2s ease-in-out infinite}
+.vs-name{font-weight:800;font-size:13.5px;letter-spacing:.2px}
+.vs-tag{margin-left:auto;font-size:10.5px;font-weight:700;color:#bcd2ff;background:rgba(85,199,255,.14);
+  border:1px solid rgba(125,226,255,.3);padding:3px 9px;border-radius:999px}
+/* The recorder below is a separate Streamlit block; these rules make it read as
+   one continuous panel with .voice-studio rather than actually nesting it. */
+.voice-studio + div[data-testid="stAudioInput"]{
+  border:1px solid #3d6ea8;border-top:none;border-radius:0 0 26px 26px;
+  background:linear-gradient(160deg,rgba(20,45,70,.4),rgba(56,32,96,.32));
+  margin-top:-2px;margin-bottom:14px;padding:14px}
 
 .sidebar-brand{padding:6px 2px 14px;display:flex;align-items:center;gap:10px}
 .sidebar-brand .logo-ring{position:relative;width:38px;height:38px;flex:0 0 38px}
@@ -86,6 +100,30 @@ section[data-testid="stSidebar"]{display:none!important}
 .brand .gtext{background:linear-gradient(90deg,var(--cyan),#fff,var(--pink));-webkit-background-clip:text;color:transparent}
 .badge{padding:7px 12px;border:1px solid #35507f;background:#121d39;border-radius:999px;color:#cdd9ff;font-size:12px;font-weight:600}
 .badge.live{border-color:#2c8f6c;color:#7cf0c0}
+
+/* ---------- Modern floating "dock" for the primary nav row + "More tools" select ----------
+   .nav-dock is an empty marker div; the following two Streamlit blocks (the
+   5-button row, then the selectbox) are its DOM siblings, styled via
+   adjacent-sibling selectors — no custom classes on Streamlit's own
+   containers needed, so this stays robust across Streamlit versions. */
+.nav-dock{height:8px;margin:0 0 -4px;border-radius:20px 20px 0 0;border:1px solid #2c3d68;border-bottom:none;
+  background:linear-gradient(135deg,rgba(13,19,38,.85),rgba(18,14,34,.85))}
+.nav-dock + div[data-testid="stHorizontalBlock"]{
+  border:1px solid #2c3d68;border-bottom:none;border-radius:0;padding:6px 8px 2px;
+  background:linear-gradient(135deg,rgba(13,19,38,.85),rgba(18,14,34,.85));backdrop-filter:blur(18px);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.04)}
+.nav-dock + div[data-testid="stHorizontalBlock"] div[data-testid="stButton"] button{
+  border:1px solid transparent;border-radius:14px;min-height:38px;font-size:13px;
+  background:transparent;color:#aab9e6;font-weight:700;box-shadow:none}
+.nav-dock + div[data-testid="stHorizontalBlock"] div[data-testid="stButton"] button:hover{
+  background:rgba(85,199,255,.10);color:#fff;transform:none;border-color:rgba(125,226,255,.35)}
+.nav-dock + div[data-testid="stHorizontalBlock"] div[data-testid="stButton"] button[kind="primary"]{
+  background:linear-gradient(90deg,var(--cyan),var(--violet));color:#0a0e1c;border-color:transparent;
+  box-shadow:0 8px 22px rgba(122,90,255,.4)}
+.nav-dock + div[data-testid="stHorizontalBlock"] + div[data-testid="stSelectbox"]{
+  border:1px solid #2c3d68;border-top:none;border-radius:0 0 20px 20px;
+  background:linear-gradient(135deg,rgba(13,19,38,.85),rgba(18,14,34,.85));
+  padding:8px 10px 12px;margin-bottom:14px;box-shadow:0 18px 40px rgba(0,0,0,.28)}
 
 div[data-testid="stButton"] button{
   border:1px solid #42619b;border-radius:14px;min-height:42px;
@@ -183,7 +221,7 @@ def show_ai_result(result: str):
 defaults = {
     "history": [], "words": [], "lessons": 0, "quiz_score": 0,
     "page": "Home",
-    "autoplay": False, "prefer_female": True, "live_preview": True,
+    "autoplay": False, "prefer_female": True,
 }
 for key, default in defaults.items():
     if key not in st.session_state:
@@ -231,6 +269,7 @@ st.markdown(
 )
 
 # ---------------- Primary navigation: clean front tabs ----------------
+st.markdown('<div class="nav-dock"></div>', unsafe_allow_html=True)
 primary = [("Home","🏠"),("Learn","📚"),("Voice Translator","🎙️"),("AI Tutor","🤖"),("Correct My English","✍️")]
 cols = st.columns(5)
 for col, (name, icon) in zip(cols, primary):
@@ -255,7 +294,7 @@ if page == "Home":
         '<p>Learn languages with an AI tutor, real speech recognition, instant translation, smart correction, '
         'vocabulary practice and guided lessons — all in one fast, creative workspace.</p>'
         '<div class="pillrow"><span class="pill">130+ Languages</span><span class="pill">AI Tutor</span>'
-        '<span class="pill">Live Voice Recognition</span><span class="pill">Grammar Coach</span>'
+        '<span class="pill">AI Voice Recognition</span><span class="pill">Grammar Coach</span>'
         '<span class="pill">Personal Progress</span></div></div>',
         unsafe_allow_html=True,
     )
@@ -290,40 +329,56 @@ elif page == "Learn":
         feature("Learning path", "🧭", "Daily conversation → Vocabulary → Grammar → Pronunciation → Listening → Speaking → Review")
 
 elif page == "Voice Translator":
-    st.markdown('<div class="voice-title">🎙️ Voice Translator</div><div class="voice-sub">Speak clearly. See words instantly. Get a fast text answer.</div>', unsafe_allow_html=True)
-    a,b = st.columns(2)
+    st.markdown('<div class="voice-title">🎙️ Voice Translator</div><div class="voice-sub">Speak clearly. See words instantly. Get a fast, accurate answer.</div>', unsafe_allow_html=True)
+    a, b = st.columns(2)
     with a: st.markdown(f'<div class="card"><b>🎤 From</b><div style="font-size:18px;margin-top:5px">{name_of(source)}</div></div>', unsafe_allow_html=True)
     with b: st.markdown(f'<div class="card"><b>🌐 To</b><div style="font-size:18px;margin-top:5px">{name_of(target)}</div></div>', unsafe_allow_html=True)
 
-    sw1,sw2,sw3 = st.columns(3)
+    sw1, sw2 = st.columns(2)
     with sw1: voice_female = st.toggle("🔊 Female voice", value=st.session_state.prefer_female, key="vt_female")
-    with sw2: show_live = st.toggle("⚡ Live recognition", value=st.session_state.live_preview, key="vt_live")
-    with sw3: fast_mode = st.toggle("🚀 Fast answer", value=True, key="vt_fast")
+    with sw2: fast_mode = st.toggle("🚀 Fast answer", value=True, key="vt_fast",
+                                     help="On: one quick translation. Off: adds a grammar-correction pass.")
 
-    st.markdown('<div class="fast-card"><h3>🎯 Speak naturally</h3><p>Use live recognition for instant text, or record a clip for higher-quality AI transcription.</p></div>', unsafe_allow_html=True)
-    if show_live:
-        render_live_recognition(code_of(source), height=250)
-    audio = st.audio_input("🎤 Record voice for AI analysis")
-    typed = st.text_area("Text", placeholder="Or type your sentence here…", height=100, label_visibility="collapsed")
+    # ---- Single, unified voice-recognition panel (Gemini 3.5 Transcribe) ----
+    st.markdown(
+        f'<div class="voice-studio">'
+        f'<div class="voice-studio-head">'
+        f'<span class="vs-dot"></span><span class="vs-name">AI Voice Recognition</span>'
+        f'<span class="vs-tag">Gemini 3.5 Transcribe</span></div>'
+        f'<div class="mic-stage"><div class="mic-orb"><div class="r1"></div><div class="r2"></div>'
+        f'<div class="core">{MIC_SVG}</div></div>'
+        f'<div class="mic-caption">One tap, real microphone, studio-grade transcription</div></div>'
+        f'</div>',
+        unsafe_allow_html=True,
+    )
+    audio = st.audio_input("🎤 Record voice for AI analysis", label_visibility="collapsed")
+
+    typed = st.text_area("Text", placeholder="…or type your sentence here", height=90, label_visibility="collapsed")
+
     if st.button("⚡ Get Fast Answer", type="primary", use_container_width=True):
         text = typed.strip()
         if not text and audio:
-            with st.spinner("Transcribing…"):
-                try: text = transcribe_audio(audio.getvalue(), code_of(source))
-                except Exception as exc: st.error(f"AI service error: {exc}")
+            with st.spinner("Transcribing with Gemini…"):
+                try:
+                    text = transcribe_audio(audio.getvalue(), code_of(source), mime_type=audio.type or "audio/wav")
+                except Exception as exc:
+                    st.error(f"AI service error: {exc}")
         if not text:
             st.warning("Speak or type something first.")
         else:
             with st.spinner("Generating answer…"):
-                # One focused request keeps the response faster than separate translation + correction calls.
-                result = translate_text(text, source, target)
+                translation = translate_text(text, source, target)
+                correction = None if fast_mode else correct_text(text, source)
             st.markdown('<div class="section-title">Your answer</div>', unsafe_allow_html=True)
             st.markdown(f'<div class="tt-result"><b>📝 You said</b><br>{text}</div>', unsafe_allow_html=True)
-            st.markdown(f'<div class="tt-result success"><b>⚡ Answer</b><br>{result}</div>', unsafe_allow_html=True)
-            if not str(result).startswith("AI service error:"):
-                st.session_state.history.insert(0, {"source": text, "from": name_of(source), "to": name_of(target), "result": result})
-                st.session_state.last_translation = result
+            st.markdown(f'<div class="tt-result success"><b>⚡ Answer</b><br>{translation}</div>', unsafe_allow_html=True)
+            if correction is not None:
+                st.markdown(f'<div class="tt-result"><b>✍️ Correction</b><br>{correction}</div>', unsafe_allow_html=True)
+            if not str(translation).startswith("AI service error:"):
+                st.session_state.history.insert(0, {"source": text, "from": name_of(source), "to": name_of(target), "result": translation})
+                st.session_state.last_translation = translation
     if st.session_state.get("last_translation"):
+        st.markdown('<div class="section-title">🔊 Listen</div>', unsafe_allow_html=True)
         render_browser_tts(st.session_state.last_translation, code_of(target), "Female" if voice_female else "Male")
 
 elif page == "AI Tutor":

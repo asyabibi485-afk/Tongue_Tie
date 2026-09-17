@@ -54,3 +54,21 @@ POST https://generativelanguage.googleapis.com/v1beta/models/{model}:generateCon
 Language coverage (130+ languages/locales across every populated
 continent), the RAG knowledge base, lesson/quiz/vocabulary/grammar
 generation, and the Streamlit Cloud deployment flow are unchanged.
+
+## Front-page redesign + single voice-recognition path
+
+- Removed the sidebar entirely — language pickers now live in a
+  front-and-center "front controls" panel, and primary navigation is a
+  5-tab row plus a "More tools" dropdown for the rest, both styled as one
+  continuous glass "dock."
+- Removed the separate in-browser live-recognition preview. There is now
+  **one** voice-recognition path — the AI-powered recorder
+  (`st.audio_input` → `gemini-3.5-transcribe`) — styled as a dedicated
+  "Voice Studio" panel with a pulsing mic centerpiece, so behavior is
+  consistent across every browser/device instead of depending on
+  Web-Speech-API support.
+- The recorder now sends the browser's actual recorded MIME type to
+  Gemini instead of assuming WAV.
+- The "Fast answer" toggle on the Voice Translator page is now wired up:
+  on, it does one quick translation; off, it also runs a grammar
+  correction pass.
